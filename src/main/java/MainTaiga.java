@@ -1,3 +1,11 @@
+/**
+  <dependency>
+    <groupId>com.github.javiergs</groupId>
+    <artifactId>TULIP</artifactId>
+    <version>v7.1</version>
+  </dependency>
+*/       
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
