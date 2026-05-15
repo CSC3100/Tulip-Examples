@@ -1,3 +1,11 @@
+/**
+  <dependency>
+    <groupId>com.github.javiergs</groupId>
+    <artifactId>TULIP</artifactId>
+    <version>v7.1</version>
+  </dependency>
+*/       
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
@@ -15,15 +23,23 @@ public class MainTaiga {
     String host = require(cfg, "taiga.host");
     String username = require(cfg, "taiga.username");
     String password = require(cfg, "taiga.password");
+
     TaigaClient taiga = new TaigaClient(host);
     taiga.login(username, password);
 
     List<TaigaProject> projects = taiga.getMyProjects();
+
     for (TaigaProject p : projects) {
       printProjectHeader(p);
-      printSprints(taiga.getSprints(p.getId()));
+
+      List<TaigaSprint> sprints = taiga.getSprints(p.getId());
+
+      printSprints(sprints);
+      printStoriesPerSprint(taiga, sprints);
       printStories(taiga.getStories(p.getId()));
       printTasks(taiga.getTasks(p.getId()));
+
+      System.out.println("--------------------------------------------------");
     }
   }
 
@@ -39,8 +55,33 @@ public class MainTaiga {
       System.out.println("  (none)");
       return;
     }
+
     for (TaigaSprint s : sprints) {
       System.out.println("  - " + s);
+    }
+  }
+
+  private static void printStoriesPerSprint(TaigaClient taiga, List<TaigaSprint> sprints) throws Exception {
+    System.out.println("User Stories per Sprint:");
+
+    if (sprints.isEmpty()) {
+      System.out.println("  (no sprints)");
+      return;
+    }
+
+    for (TaigaSprint sprint : sprints) {
+      System.out.println("  Sprint: " + sprint.getName());
+
+      List<TaigaUserStory> stories = taiga.getStoriesBySprint(sprint.getId());
+
+      if (stories.isEmpty()) {
+        System.out.println("    (no stories)");
+        continue;
+      }
+
+      for (TaigaUserStory us : stories) {
+        System.out.println("    - " + us);
+      }
     }
   }
 
@@ -50,6 +91,7 @@ public class MainTaiga {
       System.out.println("  (none)");
       return;
     }
+
     for (TaigaUserStory us : stories) {
       System.out.println("  - " + us);
     }
@@ -61,6 +103,7 @@ public class MainTaiga {
       System.out.println("  (none)");
       return;
     }
+
     for (TaigaTask t : tasks) {
       System.out.println("  - " + t);
     }
@@ -69,7 +112,9 @@ public class MainTaiga {
   private static Properties loadProperties(String resourceName) throws Exception {
     Properties p = new Properties();
     try (InputStream in = MainTaiga.class.getClassLoader().getResourceAsStream(resourceName)) {
-      if (in == null) throw new RuntimeException(resourceName + " not found in src/main/resources");
+      if (in == null) {
+        throw new RuntimeException(resourceName + " not found in src/main/resources");
+      }
       p.load(in);
     }
     return p;
@@ -77,8 +122,9 @@ public class MainTaiga {
 
   private static String require(Properties p, String key) {
     String v = p.getProperty(key);
-    if (v == null || v.isBlank()) throw new IllegalArgumentException("Missing property: " + key);
+    if (v == null || v.isBlank()) {
+      throw new IllegalArgumentException("Missing property: " + key);
+    }
     return v.trim();
   }
 }
-
